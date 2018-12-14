@@ -72,9 +72,13 @@ functions:
     handler: handler.get
     events:
       - stream:
-        type: kinesis
-        arn: arn:aws:kinesis:us-east-1:336657310804:stream/test-kinesis-stream
-        batch: 100
+          type: kinesis
+          arn:
+            Fn::GetAtt:
+              - KinesisStream
+              - Arn
+          batch: 100
+          startingPosition: LATEST
   putOnStream:
     handler: handler.put
     events:
