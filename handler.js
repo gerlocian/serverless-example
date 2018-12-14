@@ -4,28 +4,22 @@ const AWS = require('aws-sdk');
 const kinesis = new AWS.Kinesis();
 
 module.exports.get = async (event, context, callback) => {
-    // event.kinesis.forEach()
-    // console.log(event.kinesis);
-    console.log(event);
-    // console.log(context);
+    event.Records.forEach(record => {
+        const payload = new Buffer(record.kinesis.data, 'base64').toString('utf-8');
+        console.log(JSON.parse(payload).message);
+    });
+
     callback(null, 'Success');
-
-    // return {
-    //   statusCode: 200,
-    //   body: JSON.stringify({
-    //     message: 'Go Serverless v1.0! Your function executed successfully!',
-    //     input: event,
-    //   }),
-    // };
-
-    // Use this code if you don't use the http event with the LAMBDA-PROXY integration
-    // return { message: 'Go Serverless v1.0! Your function executed successfully!', event };
 };
 
 module.exports.put = async (event, context, callback) => {
     kinesis.putRecord({
         StreamName: 'test-kinesis-stream',
-        Data: 'This is a test',
+        Data: JSON.stringify({
+            name: 'Patrick Ortiz',
+            message: 'This is a test',
+            dob: 'Sept 21 1979'
+        }),
         PartitionKey: '1'
     }, (err, data) => {
         if (err) {
