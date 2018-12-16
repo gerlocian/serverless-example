@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: serverless-example
+service: serverless-example-dynamodb
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -23,16 +23,14 @@ provider:
   iamRoleStatements:
     - Effect: Allow
       Action:
-        - kinesis:GetRecords
-        - kinesis:GetShardIterator
-        - kinesis:PutRecord
-        - kinesis:PutRecords
-        - kinesis:DescribeStream
-        - kinesis:ListStreams
-        - logs:CreateLogGroup
-        - logs:CreateLogStream
-        - logs:PutLogEvents
-      Resource: arn:aws:kinesis:us-east-1:336657310804:stream/test-kinesis-stream
+        - dynamodb:*
+        - logs:*
+      Resource:
+        Fn::GetAtt:
+          - DynamoDbTable
+          - Arn
+  environment:
+    tableName: test-example-table
 
 # you can overwrite defaults here
 #  stage: dev
@@ -68,23 +66,21 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  getFromStream:
-    handler: handler.get
-    events:
-      - stream:
-          type: kinesis
-          arn:
-            Fn::GetAtt:
-              - KinesisStream
-              - Arn
-          batch: 100
-          startingPosition: LATEST
-  putOnStream:
-    handler: handler.put
+  write:
+    handler: handler.write
     events:
       - http:
-          path: generate
+          path: write
           method: get
+  watch:
+    handler: handler.watch
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt:
+              - DynamoDbTable
+              - StreamArn
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
@@ -132,8 +128,18 @@ functions:
 #       Value: "Some output value"
 resources:
   Resources:
-    KinesisStream:
-      Type: AWS::Kinesis::Stream
+    DynamoDbTable:
+      Type: AWS::DynamoDB::Table
       Properties:
-        Name: test-kinesis-stream
-        ShardCount: 1
+        TableName: ${self:provider.environment.tableName}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
