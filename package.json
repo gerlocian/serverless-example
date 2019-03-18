@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "serverless-s3-sync": "^1.7.3"
+  },
   "devDependencies": {
     "serverless": "^1.34.1"
   },
